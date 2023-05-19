@@ -1,10 +1,13 @@
-import os, glob
+import os
+import glob
 from selenium import webdriver
 from time import sleep
 from selenium.webdriver.chrome.service import Service
 from webdriver_manager.chrome import ChromeDriverManager
 from selenium.webdriver.chrome.options import Options
 from selenium.webdriver.common.by import By
+from selenium.webdriver.support.ui import WebDriverWait
+from selenium.webdriver.support import expected_conditions as EC
 from dotenv import load_dotenv
 
 #Obtain the variables saved on .env file
@@ -23,10 +26,6 @@ chrome_options.add_experimental_option('prefs', {'download.default_directory': c
 
 def downloadSpreadsheet(url):
 
-	print("Valor de urlSpreadsheet: " + urlSpreadsheet)
-	print("Valor de AndroidFilenameFile: " + AndroidFilenameFile)
-	print("Valor de PCFilenameFile: " + PCFilenameFile)
-
 	try:
 		#Delete old files to avoid ending up with a XXXX(1).csv
 		print("Deleting old files to avoid duplicates")
@@ -36,18 +35,20 @@ def downloadSpreadsheet(url):
 		if(os.path.exists(PCFilenameFile)):
 			os.remove(PCFilenameFile)
 
-		#Open the browser and download the files
+		#Open a selenium browser and download the files
 		driver = webdriver.Chrome(service=Service(ChromeDriverManager().install()), options=chrome_options)
 		driver.get(url)
 
-		#Obtain the Android/IOS.csv file
+		#Obtain the Android/iOS.csv file
 		print("Download Android/iOS Filenames")
 		driver.find_element("id", "docs-file-menu").click()
 		driver.find_element(By.CLASS_NAME, "docs-icon-editors-ia-download").click()
 		driver.find_element(By.XPATH, "//*[@aria-label[contains(., '(.csv)')]]").click()
 
-		#Wait 2 seconds until file is completely downloaded
-		sleep(2)
+		# Wait until the file is completely downloaded
+		WebDriverWait(driver, 10).until(
+            lambda driver: any("Android" in filename for filename in os.listdir(current_dir))
+        )
 
 		#Rename the downloaded file to AndroidFilenames.csv
 		androidPath = glob.glob(current_dir + "/*Android*.csv")
@@ -66,8 +67,10 @@ def downloadSpreadsheet(url):
 		driver.find_element(By.CLASS_NAME, "docs-icon-editors-ia-download").click()
 		driver.find_element(By.XPATH, "//*[@aria-label[contains(., '(.csv)')]]").click()
 
-		#Wait 2 seconds until file is completely downloaded
-		sleep(2)
+		# Wait until the file is completely downloaded
+		WebDriverWait(driver, 10).until(
+            lambda driver: any("PC" in filename for filename in os.listdir(current_dir))
+        )
 
 		#Rename the downloaded file to PCFilenames.csv
 		androidPath = glob.glob(current_dir + "/*PC*.csv")
@@ -79,7 +82,7 @@ def downloadSpreadsheet(url):
 			new_file_path = os.path.join(directory, new_filename)
 			os.rename(file_path, new_file_path)
 
-		sleep(4)
+		#Close the selenium browser
 		driver.close()
 		print("Files downloaded correctly")
 	except Exception as e:
