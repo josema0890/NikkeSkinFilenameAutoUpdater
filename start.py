@@ -7,7 +7,7 @@ def downloadSpreadsheets():
     return subprocess.call(['python', 'downloadSpreadsheet.py'])
 
 def renameSkins():
-    subprocess.call(['python', 'renameSkings.py'])
+    subprocess.call(['python', 'renameSkins.py'])
         
 # Check if we need to install Selenium, Webdriver Manager and Python DotEnv
 checkLibraries()
@@ -21,4 +21,5 @@ else:
     print("Files downloaded correctly, statusCode is " + str(statusCode))
     print("TODO: Stop the program if the download fails")
     
-print("Spreadsheets downloaded, extracting the names and renaming the files (Here we will execute renameSkins())")
+#Rename the skins with renameSkins.py
+renameSkins()

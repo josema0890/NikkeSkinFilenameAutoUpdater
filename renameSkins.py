@@ -25,6 +25,9 @@ stringAim = str(os.getenv('STRING_AIM'))
 stringCover = str(os.getenv('STRING_COVER'))
 stringStanding = str(os.getenv('STRING_STANDING'))
 underscoreSeparator = str(os.getenv('UNDERSCORE_SEPARATOR'))
+skeletonCheckAvoid = str(os.getenv('STRING_SKELETON_CHECK'))
+stringNikkeCardStart = str(os.getenv('STRING_NIKKE_CARD_START'))
+stringNikkeCardEnd = str(os.getenv('STRING_NIKKE_CARD_END'))
 stringPlatformPC = str(os.getenv('STRING_PLATFORM_PC'))
 stringPlatformAndroid = str(os.getenv('STRING_PLATFORM_ANDROID'))
 
@@ -138,13 +141,13 @@ def renameFilesOfFolder(filesDesiredFolder, dataToUse, platform):
 				#print(f"Error al renombrar {oldFileName} a {fileFound[3]} en {pathOfSkin}")
 				#print(f"ERROR: {e}")
 				logNewLines += f"Error renaming {oldFileName} to {fileFound[3]} at {pathOfSkin}\n"
-				logNewLines += f"ERROR: {e}\n"
+				logNewLines += f"ERROR in fileFound != '''': {e}\n"
 				continue
 
 		else:
-			archivo = open(file, "rb")
-			primerosBytes = archivo.read(4)
-			hexadecimal = primerosBytes.hex().upper()
+			fileToRead = open(file, "rb")
+			firstBytes = fileToRead.read(4)
+			hexadecimal = firstBytes.hex().upper()
 
 			characterCode = ""
 
@@ -152,9 +155,9 @@ def renameFilesOfFolder(filesDesiredFolder, dataToUse, platform):
 				#print(f"{fileToSearch} es un fichero de nikke, voy a buscar su characterCode en los ficheros para ver si podemos actualizar nombre desfasado")
 				#logNewLines += f"{fileToSearch} is a valid nikke file, searching characterCode and pose to try to force updating an old nikke file\n"
 
-				archivo.seek(0)
-				datosBinarios = archivo.read()
-				archivo.close()
+				fileToRead.seek(0)
+				binaryData = fileToRead.read()
+				fileToRead.close()
 
 				for character in characterCodesData:
 					#Almaceno el valor de characterCode del personaje en cuestión
@@ -181,9 +184,12 @@ def renameFilesOfFolder(filesDesiredFolder, dataToUse, platform):
 						#print(f"{characterCode} Number of Skin {valorI}")
 						aimHEX = bytes(f"{characterCode}{underscoreSeparator}{stringAim}{underscoreSeparator}{iValue}", 'utf-8') #c170_aim_00
 						coverHEX = bytes(f"{characterCode}{underscoreSeparator}{stringCover}{underscoreSeparator}{iValue}", 'utf-8') #c170_cover_00
+						cardHEX = bytes(f"{stringNikkeCardStart}{characterCode}{underscoreSeparator}{iValue}{stringNikkeCardEnd}", 'utf-8') #mi_c170_00_s
+						#skeletonHEXAvoid = bytes(f"")#mi_c170_00_Skeleton
 						standingHEX = bytes(f"{characterCode}{underscoreSeparator}{iValue}{underscoreSeparator}", 'utf-8') #Valdria c170_00
 
-						if datosBinarios.find(aimHEX) != -1:
+						#Try to found nikke by searching cAAA_aim_BB (AAA Nike Character Code / B Number of Skin)
+						if binaryData.find(aimHEX) != -1:
 							foundMatch = True  # Coincidencia encontrada, establecer la variable de control en True
 							#print(f"He encontrado {character[1]} {str(aimHEX, 'utf-8')} en el fichero: {fileToSearch}")
 							#logNewLines += f"Found {character[1]} {str(aimHEX, 'utf-8')} on file {fileToSearch}\n"
@@ -208,12 +214,13 @@ def renameFilesOfFolder(filesDesiredFolder, dataToUse, platform):
 								#print(f"Error al renombrar {oldFileName} a {fileFound[3]} en {pathOfSkin}")
 								#print(f"ERROR: {e}")
 								logNewLines += f"Error renaming {file} to {filteredNewFileName[0][3]}\n"
-								logNewLines += f"ERROR: {e}\n"
+								logNewLines += f"ERROR in binaryData.find(aimHEX): {e}\n"
 								continue
 
 							break
 
-						if datosBinarios.find(coverHEX) != -1:
+						#Try to found nikke by searching cAAA_cover_BB (AAA Nike Character Code / B Number of Skin)
+						if binaryData.find(coverHEX) != -1:
 							foundMatch = True  # Coincidencia encontrada, establecer la variable de control en True
 							#print(f"He encontrado {character[1]} {str(coverHEX, 'utf-8')} en el fichero: {fileToSearch}")
 							#logNewLines += f"Found {character[1]} {str(coverHEX, 'utf-8')} on file {fileToSearch}\n"
@@ -238,12 +245,21 @@ def renameFilesOfFolder(filesDesiredFolder, dataToUse, platform):
 								#print(f"Error al renombrar {oldFileName} a {fileFound[3]} en {pathOfSkin}")
 								#print(f"ERROR: {e}")
 								logNewLines += f"Error renaming {file} to {filteredNewFileName[0][3]}\n"
-								logNewLines += f"ERROR: {e}\n"
+								logNewLines += f"ERROR in binaryData.find(coverHEX): {e}\n"
 								continue
 
 							break
 
-						if datosBinarios.find(standingHEX) != -1:
+						#Try to found nikke character selection card by searching mi_cAAA_BB_s (AAA Nike Character Code / B Number of Skin)
+						if binaryData.find(cardHEX) != -1:
+							foundMatch = True
+
+							print(f"Found {character[1]} character selection card, renaming file (TO IMPLEMENT)")
+							#Implement search in nikke files and rename based on the updated filename
+							break
+
+						#Try to found nikke by searching cAAA_BB (AAA Nike Character Code / B Number of Skin)
+						if binaryData.find(standingHEX) != -1:
 							foundMatch = True  # Coincidencia encontrada, establecer la variable de control en True
 							#print(f"He encontrado {character[1]} {str(standingHEX, 'utf-8')} en el fichero: {fileToSearch}")
 							#logNewLines += f"Found {character[1]} {str(standingHEX, 'utf-8')} on file {fileToSearch}\n"
@@ -268,7 +284,7 @@ def renameFilesOfFolder(filesDesiredFolder, dataToUse, platform):
 								#print(f"Error al renombrar {oldFileName} a {fileFound[3]} en {pathOfSkin}")
 								#print(f"ERROR: {e}")
 								logNewLines += f"Error renaming {file} to {filteredNewFileName[0][3]}\n"
-								logNewLines += f"ERROR: {e}\n"
+								logNewLines += f"ERROR in binaryData.find(standingHEX): {e}\n"
 								continue
 							
 							break
